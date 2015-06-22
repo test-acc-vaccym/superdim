@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">SuperDim</string>
+
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+    <string name="enable_dim">Enable SuperDim</string>
+    <string name="dim_level">Dim level: %s</string>
+</resources>
