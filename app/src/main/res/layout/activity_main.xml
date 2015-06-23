@@ -23,38 +23,38 @@
 
 
         <android.support.v7.widget.SwitchCompat
+            android:id="@+id/switchMaster"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/enable_dim"
-            android:layout_marginBottom="@dimen/activity_vertical_margin"
-            android:id="@+id/switchMaster"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:layout_alignParentTop="true"
-            android:layout_alignParentLeft="true"
-            android:layout_alignParentStart="true"
-            android:layout_alignParentRight="true"
             android:layout_alignParentEnd="true"
-            android:checked="false" />
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:layout_marginBottom="@dimen/activity_vertical_margin"
+            android:checked="false"
+            android:text="@string/enable_dim"
+            android:textAppearance="?android:attr/textAppearanceLarge" />
 
         <TextView
+            android:id="@+id/textViewLevel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="@string/dim_level"
-            android:id="@+id/textViewLevel"
-            android:layout_below="@+id/switchMaster"
             android:layout_alignParentLeft="true"
-            android:layout_alignParentStart="true" />
+            android:layout_alignParentStart="true"
+            android:layout_below="@+id/switchMaster"
+            android:text="@string/dim_level"
+            android:textAppearance="?android:attr/textAppearanceLarge" />
 
         <SeekBar
+            android:id="@+id/seekBarDim"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:id="@+id/seekBarDim"
-            android:layout_below="@+id/textViewLevel"
+            android:layout_alignEnd="@+id/switchMaster"
             android:layout_alignParentLeft="true"
             android:layout_alignParentStart="true"
             android:layout_alignRight="@+id/switchMaster"
-            android:layout_alignEnd="@+id/switchMaster"
+            android:layout_below="@+id/textViewLevel"
             android:indeterminate="false" />
 
     </RelativeLayout>

@@ -1,9 +1,10 @@
 package com.wouterhabets.superdim;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.SwitchCompat;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
@@ -11,14 +12,20 @@ import android.widget.CompoundButton;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
-public class ActivityMain extends AppCompatActivity implements CompoundButton.OnCheckedChangeListener, SeekBar.OnSeekBarChangeListener {
+public class ActivityMain extends AppCompatActivity implements
+        CompoundButton.OnCheckedChangeListener,
+        SeekBar.OnSeekBarChangeListener,
+        SharedPreferences.OnSharedPreferenceChangeListener {
 
-    private static final String PREF_ENABLED = "enabled";
-    private static final String PREF_LEVEL = "level";
+    public static final String PREF_NAME = "prefs";
+    public static final String PREF_ENABLED = "enabled";
+    public static final String PREF_LEVEL = "level";
 
     private TextView textViewLevel;
     private SeekBar seekBar;
     private String levelBaseString;
+
+    private boolean previousState;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,31 +38,54 @@ public class ActivityMain extends AppCompatActivity implements CompoundButton.On
         textViewLevel = (TextView) findViewById(R.id.textViewLevel);
         levelBaseString = getResources().getString(R.string.dim_level);
 
-        int previousLevel = getPreferences(Context.MODE_PRIVATE).getInt(PREF_LEVEL, 0);
+        SharedPreferences sharedPrefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+
+        int previousLevel = sharedPrefs.getInt(PREF_LEVEL, 0);
         seekBar = (SeekBar) findViewById(R.id.seekBarDim);
         seekBar.setProgress(previousLevel);
         updateLevel(previousLevel);
         seekBar.setOnSeekBarChangeListener(this);
 
-        changeState(getPreferences(Context.MODE_PRIVATE).getBoolean(PREF_ENABLED, false));
+        previousState = sharedPrefs.getBoolean(PREF_ENABLED, false);
+        changeState(previousState);
 
         SwitchCompat masterSwitch = (SwitchCompat) findViewById(R.id.switchMaster);
+        masterSwitch.setChecked(previousState);
         masterSwitch.setOnCheckedChangeListener(this);
+
+
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        SharedPreferences sharedPrefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        sharedPrefs.registerOnSharedPreferenceChangeListener(this);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        SharedPreferences sharedPrefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        sharedPrefs.unregisterOnSharedPreferenceChangeListener(this);
     }
 
     private void changeState(boolean isChecked) {
+        previousState = isChecked;
         if (isChecked) {
-            SharedPreferences.Editor editor = getPreferences(Context.MODE_PRIVATE).edit();
+            SharedPreferences.Editor editor = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE).edit();
             editor.putBoolean(PREF_ENABLED, true);
             editor.apply();
             textViewLevel.setVisibility(View.VISIBLE);
             seekBar.setVisibility(View.VISIBLE);
+            startService(new Intent(this, DimService.class));
         } else {
-            SharedPreferences.Editor editor = getPreferences(Context.MODE_PRIVATE).edit();
+            SharedPreferences.Editor editor = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE).edit();
             editor.putBoolean(PREF_ENABLED, false);
             editor.apply();
             textViewLevel.setVisibility(View.GONE);
             seekBar.setVisibility(View.GONE);
+            stopService(new Intent(this, DimService.class));
         }
     }
 
@@ -80,8 +110,18 @@ public class ActivityMain extends AppCompatActivity implements CompoundButton.On
 
     @Override
     public void onStopTrackingTouch(SeekBar seekBar) {
-        SharedPreferences.Editor editor = getPreferences(Context.MODE_PRIVATE).edit();
+        SharedPreferences.Editor editor = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE).edit();
         editor.putInt(PREF_LEVEL, seekBar.getProgress());
         editor.apply();
+    }
+
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        if (key.equals(PREF_ENABLED)) {
+            boolean currentState = sharedPreferences.getBoolean(PREF_ENABLED, false);
+            if (currentState != previousState) {
+                changeState(currentState);
+            }
+        }
     }
 }
