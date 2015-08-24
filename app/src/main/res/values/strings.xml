@@ -6,4 +6,8 @@
     <string name="enable_dim">Enable SuperDim</string>
     <string name="dim_level">Dim level: %s</string>
     <string name="action_stop">com.wouterhabets.superdim.STOP</string>
+    <string name="action_start">com.wouterhabets.superdim.START</string>
+    <string name="enable_time">Schedule dimming</string>
+    <string name="time_start">Start</string>
+    <string name="time_end">End</string>
 </resources>

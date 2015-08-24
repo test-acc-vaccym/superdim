@@ -1,5 +1,6 @@
 package com.wouterhabets.superdim;
 
+import android.app.ActivityManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
@@ -108,4 +109,14 @@ public class DimService extends Service implements SharedPreferences.OnSharedPre
         }
     }
 
+    public static boolean isItRunning(Context context) {
+        Class<?> serviceClass = DimService.class;
+        ActivityManager manager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.getName().equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

@@ -8,6 +8,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.SwitchCompat;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
+import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -15,17 +16,24 @@ import android.widget.TextView;
 public class ActivityMain extends AppCompatActivity implements
         CompoundButton.OnCheckedChangeListener,
         SeekBar.OnSeekBarChangeListener,
-        SharedPreferences.OnSharedPreferenceChangeListener {
+        SharedPreferences.OnSharedPreferenceChangeListener,
+        View.OnClickListener {
 
     public static final String PREF_NAME = "prefs";
     public static final String PREF_ENABLED = "enabled";
     public static final String PREF_LEVEL = "level";
+    public static final String PREF_SCHEDULING = "scheduling";
 
     private TextView textViewLevel;
     private SeekBar seekBar;
     private String levelBaseString;
 
+    private View viewTimePickers;
+    private Button buttonStart;
+    private Button buttonEnd;
+
     private boolean previousState;
+    private boolean previousScheduling;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,12 +55,23 @@ public class ActivityMain extends AppCompatActivity implements
         seekBar.setOnSeekBarChangeListener(this);
 
         previousState = sharedPrefs.getBoolean(PREF_ENABLED, false);
+        previousScheduling = sharedPrefs.getBoolean(PREF_SCHEDULING, false);
         changeState(previousState);
+        changeSchedule(previousScheduling);
 
         SwitchCompat masterSwitch = (SwitchCompat) findViewById(R.id.switchMaster);
         masterSwitch.setChecked(previousState);
         masterSwitch.setOnCheckedChangeListener(this);
 
+        viewTimePickers = findViewById(R.id.viewTimePickers);
+        buttonStart = (Button) findViewById(R.id.buttonStart);
+        buttonStart.setOnClickListener(this);
+        buttonEnd = (Button) findViewById(R.id.buttonEnd);
+        buttonStart.setOnClickListener(this);
+
+        SwitchCompat schedulingSwitch = (SwitchCompat) findViewById(R.id.switchSchedule);
+        schedulingSwitch.setChecked(previousScheduling);
+        schedulingSwitch.setOnCheckedChangeListener(this);
 
     }
 
@@ -89,13 +108,41 @@ public class ActivityMain extends AppCompatActivity implements
         }
     }
 
+    private void changeSchedule(boolean isChecked) {
+        previousScheduling = isChecked;
+        if (isChecked) {
+            SharedPreferences.Editor editor = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE).edit();
+            editor.putBoolean(PREF_SCHEDULING, true);
+            editor.apply();
+        } else {
+            SharedPreferences.Editor editor = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE).edit();
+            editor.putBoolean(PREF_SCHEDULING, false);
+            editor.apply();
+        }
+    }
+
+    private void applySchedule(boolean enable) {
+
+    }
+
+    private void applySchedule(boolean enable, String timeStart, String timeEnd) {
+
+    }
+
     private void updateLevel(int level) {
         textViewLevel.setText(String.format(levelBaseString, level));
     }
 
     @Override
     public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-        changeState(isChecked);
+        switch (buttonView.getId()) {
+            case R.id.switchMaster:
+                changeState(isChecked);
+                break;
+            case R.id.switchSchedule:
+                changeSchedule(isChecked);
+                break;
+        }
     }
 
     @Override
@@ -122,6 +169,18 @@ public class ActivityMain extends AppCompatActivity implements
             if (currentState != previousState) {
                 changeState(currentState);
             }
+        }
+    }
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.buttonStart:
+                //TODO Change start time
+                break;
+            case R.id.buttonEnd:
+                //TODO Change stop time
+                break;
         }
     }
 }
