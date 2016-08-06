@@ -1,11 +1,13 @@
 package com.wouterhabets.superdim;
 
+import android.Manifest;
 import android.app.ActivityManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.PixelFormat;
 import android.os.IBinder;
@@ -34,6 +36,23 @@ public class DimService extends Service implements SharedPreferences.OnSharedPre
     public void onCreate() {
         super.onCreate();
 
+        if (checkSelfPermission(Manifest.permission.SYSTEM_ALERT_WINDOW)
+                != PackageManager.PERMISSION_GRANTED) {
+            createPermissionNotification();
+        } else {
+            startDim();
+        }
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        if (dimView != null) windowManager.removeView(dimView);
+        sharedPrefs.unregisterOnSharedPreferenceChangeListener(this);
+        dismissNotification(NOTIFY_ID_DIM);
+    }
+
+    private void startDim() {
         sharedPrefs = getSharedPreferences(ActivityMain.PREF_NAME, Context.MODE_PRIVATE);
         int level = sharedPrefs.getInt(ActivityMain.PREF_LEVEL, 0);
 
@@ -58,22 +77,15 @@ public class DimService extends Service implements SharedPreferences.OnSharedPre
                 PixelFormat.TRANSLUCENT);
 
         windowManager.addView(dimView, windowParams);
-        createNotification(level);
+        createDimNotification(level);
 
         sharedPrefs.registerOnSharedPreferenceChangeListener(this);
     }
 
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        if (dimView != null) windowManager.removeView(dimView);
-        sharedPrefs.unregisterOnSharedPreferenceChangeListener(this);
-        dismissNotification();
-    }
+    private static final int NOTIFY_ID_DIM = 1001;
+    private static final int NOTIFY_ID_PERMISSION = 1002;
 
-    private static final int NOTIFY_ID = 1001;
-
-    private void createNotification(int level) {
+    private void createDimNotification(int level) {
         Intent viewIntent = new Intent(this, ActivityMain.class);
         PendingIntent viewPendingIntent = PendingIntent.getActivity(this, 0, viewIntent, 0);
 
@@ -92,18 +104,33 @@ public class DimService extends Service implements SharedPreferences.OnSharedPre
                 .setPriority(NotificationCompat.PRIORITY_MIN)
                 .setOngoing(true);
 
-        NotificationManagerCompat.from(this).notify(NOTIFY_ID, builder.build());
+        NotificationManagerCompat.from(this).notify(NOTIFY_ID_DIM, builder.build());
     }
 
-    private void dismissNotification() {
-        NotificationManagerCompat.from(this).cancel(NOTIFY_ID);
+    private void createPermissionNotification() {
+        Intent viewIntent = new Intent(this, ActivityMain.class);
+        PendingIntent viewPendingIntent = PendingIntent.getActivity(this, 0, viewIntent, 0);
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setContentTitle("SuperDim permission")
+                .setContentText("SuperDim requires a permission to dim the screen. Tap to grant.")
+                .setContentIntent(viewPendingIntent)
+                .setPriority(NotificationCompat.PRIORITY_MAX)
+                .setOngoing(false);
+
+        NotificationManagerCompat.from(this).notify(NOTIFY_ID_PERMISSION, builder.build());
+    }
+
+    private void dismissNotification(int id) {
+        NotificationManagerCompat.from(this).cancel(id);
     }
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
         if (key.equals(ActivityMain.PREF_LEVEL)) {
             int level = sharedPreferences.getInt(key, 0);
-            createNotification(level);
+            createDimNotification(level);
             if (dimView != null)
                 dimView.setBackgroundColor(Color.parseColor(Utils.toHex(level)));
         }

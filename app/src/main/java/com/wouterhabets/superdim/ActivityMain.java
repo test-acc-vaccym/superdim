@@ -1,8 +1,10 @@
 package com.wouterhabets.superdim;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.SwitchCompat;
@@ -24,6 +26,10 @@ public class ActivityMain extends AppCompatActivity implements
     public static final String PREF_LEVEL = "level";
     public static final String PREF_SCHEDULING = "scheduling";
 
+    private static final int PERMISSION_REQUEST = 1000;
+
+    private SwitchCompat masterSwitch;
+
     private TextView textViewLevel;
     private SeekBar seekBar;
     private String levelBaseString;
@@ -43,6 +49,10 @@ public class ActivityMain extends AppCompatActivity implements
         toolbar.setTitle(R.string.app_name);
         setSupportActionBar(toolbar);
 
+        masterSwitch = (SwitchCompat) findViewById(R.id.switchMaster);
+        masterSwitch.setChecked(previousState);
+        masterSwitch.setOnCheckedChangeListener(this);
+
         textViewLevel = (TextView) findViewById(R.id.textViewLevel);
         levelBaseString = getResources().getString(R.string.dim_level);
 
@@ -58,10 +68,6 @@ public class ActivityMain extends AppCompatActivity implements
         previousScheduling = sharedPrefs.getBoolean(PREF_SCHEDULING, false);
         changeState(previousState);
         changeSchedule(previousScheduling);
-
-        SwitchCompat masterSwitch = (SwitchCompat) findViewById(R.id.switchMaster);
-        masterSwitch.setChecked(previousState);
-        masterSwitch.setOnCheckedChangeListener(this);
 
         viewTimePickers = findViewById(R.id.viewTimePickers);
         buttonStart = (Button) findViewById(R.id.buttonStart);
@@ -92,12 +98,19 @@ public class ActivityMain extends AppCompatActivity implements
     private void changeState(boolean isChecked) {
         previousState = isChecked;
         if (isChecked) {
-            SharedPreferences.Editor editor = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE).edit();
-            editor.putBoolean(PREF_ENABLED, true);
-            editor.apply();
-            textViewLevel.setVisibility(View.VISIBLE);
-            seekBar.setVisibility(View.VISIBLE);
-            startService(new Intent(this, DimService.class));
+            if (checkSelfPermission(Manifest.permission.SYSTEM_ALERT_WINDOW)
+                    == PackageManager.PERMISSION_GRANTED) {
+                SharedPreferences.Editor editor = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE).edit();
+                editor.putBoolean(PREF_ENABLED, true);
+                editor.apply();
+                textViewLevel.setVisibility(View.VISIBLE);
+                seekBar.setVisibility(View.VISIBLE);
+                startService(new Intent(this, DimService.class));
+            } else {
+                masterSwitch.setChecked(false);
+                requestPermissions(
+                        new String[]{Manifest.permission.SYSTEM_ALERT_WINDOW}, PERMISSION_REQUEST);
+            }
         } else {
             SharedPreferences.Editor editor = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE).edit();
             editor.putBoolean(PREF_ENABLED, false);
@@ -180,6 +193,19 @@ public class ActivityMain extends AppCompatActivity implements
                 break;
             case R.id.buttonEnd:
                 //TODO Change stop time
+                break;
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        switch (requestCode) {
+            case PERMISSION_REQUEST:
+                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    masterSwitch.setChecked(true);
+                } else {
+
+                }
                 break;
         }
     }
